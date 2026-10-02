@@ -1,6 +1,6 @@
 # Research Protocol: ES/NQ × CNN Fear & Greed (pre-registration)
 
-Status: **DRAFT v1, awaiting user approval (Gate P0).** No result on any price data has been computed.
+Status: **APPROVED v1 by the user on 2026-10-02 (Gate P0 passed). Frozen.** No result on any price data had been computed at approval.
 Once approved, this file is frozen. Any change goes into §11, the amendment log, with a date and reason, before the result it affects is computed.
 
 ## 1. Question
@@ -101,4 +101,4 @@ MAE/MFE, worst trade, and P&L share of the top 5 trades.
 ## 11. Amendment log
 | Date (UTC) | Section | Change | Reason | Results seen before change? |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| 2026-10-02 | §2, §7, §8 (P6), P8 | **A1: CNN value revisions.** The P1 integrity check (reports/phase1_fear_greed.md §2) shows CNN revises each published value for about 40 sessions (first print vs settled: mean abs ≈1–1.4 points, P90 ≈2.9, max 5.5; up to 10.5 at ages 6–10), and never afterwards. History therefore holds settled values that a live trader never saw. Rules added: (a) primary results use settled history, the only full record that exists; (b) **first-print perturbation test, mandatory at Gate P6:** 1,000 Monte Carlo runs in which every F&G value used for a decision is replaced by settled + a random draw from the empirical first-print error distribution (`data/processed/fg_first_print_errors.csv`, ages 0–1). The rule passes only if the sign of its excess return is unchanged in ≥ 95% of runs and median expectancy is ≥ 50% of the unperturbed value; (c) every threshold rule reports the share of its signals that fall within ±3 points of the threshold; (d) the P8 live routine logs the first-print value daily. | Data-integrity finding (no prices, returns or signals involved) | **No** |
