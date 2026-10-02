@@ -1,9 +1,9 @@
 # Data: sources, provenance, export checklist
 
-## 0. Before ANY price data is committed
-Switch the GitHub repo to **private** (GitHub → Settings → General → Danger Zone → Change visibility).
-TradingView/CME data generally may not be redistributed. While the repo is public, `.gitignore` blocks
-`data/raw/tradingview/`. Delete those two lines only after the switch.
+## 0. Repo visibility and licensed data
+TradingView/CME data generally may not be redistributed, and git history keeps a file even after a repo goes private.
+**User decision (2026-10-02):** commit the TradingView exports even while the repo is still public, at the user's own
+risk. The user plans to switch the repo to private later. The `.gitignore` block on `data/raw/tradingview/` was removed accordingly.
 
 ## 1. Fear & Greed (no action needed from you)
 - OLD index 2011-01-03 → 2021-01-29 and NEW (CNN API) 2021-02-01 → today come from the public mirror

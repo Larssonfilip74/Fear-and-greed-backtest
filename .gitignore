@@ -4,9 +4,4 @@ __pycache__/
 .pytest_cache/
 .venv/
 
-# Licensed vendor price data (TradingView/CME) must never be committed while the repo is public.
-# Remove these two lines only after the repo has been switched to private (see DATA.md §0).
-data/raw/tradingview/*
-!data/raw/tradingview/.gitkeep
-
 data/processed/
