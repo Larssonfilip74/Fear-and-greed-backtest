@@ -75,7 +75,14 @@ Days with k < 7 are flagged (`fg_incomplete`) in the processed data. P2 reports 
 | DEV | 2495 | 49.6 | 22.3 | 10.0 | 52.0 | 85.0 | 399 | 340 |
 | VAL | 986 | 48.7 | 18.1 | 18.6 | 49.1 | 76.6 | 110 | 72 |
 
-## Gate P1 (F&G part): verdict
+## Gate P1 (F&G part): verdict (computed)
 
-See the summary in the PR / session. Exceptions requiring user acceptance are listed there.
+**PASSED: every detected exception was accepted by the user (2026-10-02):**
+
+- `gap OLD 2020-06-08..2020-07-08`: OLD-era gap of 22 sessions: no signal can fire inside it.
+- `gap NEW 2026-03-12..2026-03-12`: 2026-03-12 missing (holdout window).
+- `revisions`: Settled (revised) CNN history is used; first-print risk handled by amendment A1's perturbation test.
+- `incomplete components`: 2021 days averaging 5–6 of 7 components are flagged (`fg_incomplete`); P2 reports with and without.
+
+The price-data part of P1 is pending the TradingView exports (DATA.md).
 

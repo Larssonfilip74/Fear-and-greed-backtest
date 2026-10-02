@@ -27,6 +27,15 @@ from fgbt.data.validate import extra_non_trading_days, gap_runs, missing_trading
 ROOT = Path(__file__).resolve().parents[1]
 BANDS = [0, 25, 45, 55, 75, 100.0001]
 
+# Exceptions the user accepted at Gate P1 on 2026-10-02. The verdict is computed: any detected exception
+# not in this set makes the gate PENDING until the user accepts it (and it is added here in a reviewed commit).
+ACCEPTED_EXCEPTIONS = {
+    "revisions": "Settled (revised) CNN history is used; first-print risk handled by amendment A1's perturbation test.",
+    "gap OLD 2020-06-08..2020-07-08": "OLD-era gap of 22 sessions: no signal can fire inside it.",
+    "incomplete components": "2021 days averaging 5–6 of 7 components are flagged (`fg_incomplete`); P2 reports with and without.",
+    "gap NEW 2026-03-12..2026-03-12": "2026-03-12 missing (holdout window).",
+}
+
 
 def band(x):
     return int(np.digitize([x], BANDS)[0])
@@ -74,16 +83,18 @@ def main():
     w("## 1. Coverage, range, calendar\n")
     w("| Era | First | Last | Rows | Min | Max | Missing NYSE sessions | Non-session rows |")
     w("|---|---|---|---|---|---|---|---|")
-    gap_lines = []
+    gap_lines, detected = [], []
     for era in ("OLD", "NEW"):
         e = df[df.era == era]
         miss = missing_trading_days(e.index)
         extra = extra_non_trading_days(e.index)
         w(f"| {era} | {e.index.min()} | {e.index.max()} | {len(e)} | {e.fg.min():.2f} | {e.fg.max():.2f} | {len(miss)} | {len(extra)} |")
         for a, b, n in gap_runs(miss):
+            detected.append(f"gap {era} {a}..{b}")
             gap_lines.append(f"- {era}: {a} → {b} ({n} session{'s' if n > 1 else ''})")
         for d in extra:
             gap_lines.append(f"- {era}: row on non-NYSE-session date {d}")
+            detected.append(f"non-session row {era} {d}")
     w("\nMissing-session runs and anomalies:\n")
     w("\n".join(gap_lines) if gap_lines else "- none")
     w("\nRule (protocol §2): values are never forward-filled for more than 3 sessions. Inside a longer gap no new signal can fire.\n")
@@ -128,6 +139,10 @@ def main():
     for b, g in rv.groupby("bucket", observed=True):
         w(f"| {b} | {len(g)} | {100 * (g['abs'] > 1e-9).mean():.1f}% | {g['abs'].mean():.2f} | {g['abs'].quantile(.9):.2f} | {g['abs'].max():.2f} |")
     settled = rv[rv.age > 40]
+    if (rv["abs"] > 1e-9).any():
+        detected.append("revisions")
+    if (settled["abs"] > 1e-9).any():
+        detected.append("revisions after 40 sessions")
     w(f"\n**Result: CNN revises published values for about 40 sessions, then they are final** "
       f"({int((settled['abs'] > 1e-9).sum())} revisions among {len(settled)} pairs older than 40 sessions). "
       f"A live trader acts on the first print, while history holds the settled value. The first print's error is typically "
@@ -194,8 +209,19 @@ def main():
         w(f"| {name} | {len(s)} | {s.mean():.1f} | {s.std():.1f} | {q.iloc[0]:.1f} | {q.iloc[1]:.1f} | {q.iloc[2]:.1f} | "
           f"{(s < 25).sum()} | {(s >= 75).sum()} |")
 
-    w("\n## Gate P1 (F&G part): verdict\n")
-    w("See the summary in the PR / session. Exceptions requiring user acceptance are listed there.\n")
+    if any(v is not None and v < 7 for v in k.values):
+        detected.append("incomplete components")
+    w("\n## Gate P1 (F&G part): verdict (computed)\n")
+    unaccepted = [x for x in detected if x not in ACCEPTED_EXCEPTIONS]
+    if unaccepted:
+        w("**PENDING: exceptions not yet accepted by the user:** " + "; ".join(unaccepted) + "\n")
+    else:
+        w("**PASSED: every detected exception was accepted by the user (2026-10-02):**\n")
+    for x in detected:
+        if x in ACCEPTED_EXCEPTIONS:
+            w(f"- `{x}`: {ACCEPTED_EXCEPTIONS[x]}")
+    w("")
+    w("The price-data part of P1 is pending the TradingView exports (DATA.md).\n")
 
     df["fg_incomplete"] = [bool(d in k.index and k[d] is not None and k[d] < 7) for d in df.index]
     df.to_parquet(ROOT / "data/processed/fear_greed.parquet")

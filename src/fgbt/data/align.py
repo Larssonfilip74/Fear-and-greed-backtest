@@ -21,6 +21,13 @@ def _rth_opens() -> pd.Series:
     return cal.schedule["open"]  # tz-aware UTC, one row per session (holidays excluded)
 
 
+@lru_cache(maxsize=1)
+def rth_open_map() -> dict:
+    """NYSE session date -> regular-session open (UTC). Single source for the engine and availability rules."""
+    opens = _rth_opens()
+    return {ts.date(): o for ts, o in zip(opens.index, opens)}
+
+
 def first_rth_open_after(ts: datetime) -> datetime:
     """First NYSE regular-session open at or after `ts` (UTC-aware)."""
     opens = _rth_opens()
