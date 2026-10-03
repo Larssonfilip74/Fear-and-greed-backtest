@@ -2,6 +2,7 @@
 import io
 import re
 from datetime import date
+import numpy as np
 import pandas as pd
 
 from fgbt.data.validate import _sessions
@@ -58,3 +59,27 @@ def parse_tradingview_csv(text: str, timeframe: str) -> pd.DataFrame:
     if not df.index.is_monotonic_increasing:
         raise ValueError("bars are not sorted by time")
     return df
+
+
+def ratio_adjust(badj: pd.DataFrame, raw: pd.DataFrame, tol: float = 0.01) -> pd.DataFrame:
+    """Ratio-adjusted OHLC from an additive back-adjusted / unadjusted pair (same sessions).
+
+    Offset D = badj - raw close is constant between rolls and steps at each roll session s. Continuity of the
+    back-adjusted series gives new_{s-1} = old_{s-1} - step (old = raw close of session s-1, still the old contract),
+    so the ratio factor for that roll is new/old = (old - step) / old.
+    History before s is multiplied by the product of all later factors, so every daily return equals the
+    held contract's true percentage move and the latest prices equal the raw prices.
+    """
+    common = badj.index.intersection(raw.index)
+    b, r = badj.loc[common].sort_index(), raw.loc[common].sort_index()
+    offset = (b["close"] - r["close"]).to_numpy()
+    step = np.r_[0.0, np.diff(offset)]
+    close = r["close"].to_numpy()
+    factor_at = np.ones(len(common))
+    for i in np.nonzero(np.abs(step) > tol)[0]:
+        factor_at[i] = (close[i - 1] - step[i]) / close[i - 1]
+    # multiplier for session t = product of roll factors at sessions strictly after t
+    after = np.r_[np.cumprod(factor_at[::-1])[::-1][1:], 1.0]
+    out = r[["open", "high", "low", "close"]].mul(after, axis=0)
+    out["roll"] = np.abs(step) > tol
+    return out

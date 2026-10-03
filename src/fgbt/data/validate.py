@@ -106,6 +106,7 @@ def detect_rolls(badj: pd.Series, raw: pd.Series, tol: float = 0.01) -> pd.DataF
     rows = []
     for d, g in step[step.abs() > tol].items():
         expiry = next(e for e in (_third_friday(d.year + k, m) for k in (0, 1) for m in (3, 6, 9, 12)) if e >= d)
-        rows.append({"session": d, "gap_points": float(g), "expiry": expiry,
+        # gap = new contract - old contract at the roll = -(step in badj - raw), see prices.ratio_adjust
+        rows.append({"session": d, "gap_points": float(-g), "expiry": expiry,
                      "in_expected_window": 0 <= (expiry - d).days <= 12})
     return pd.DataFrame(rows, columns=["session", "gap_points", "expiry", "in_expected_window"])

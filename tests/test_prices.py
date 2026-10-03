@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -92,7 +93,7 @@ def test_detect_rolls_finds_known_gap_in_expected_window():
     badj = raw - 12.5 + adj_shift  # history shifted down by the gap, current contract unadjusted
     rolls = detect_rolls(badj, raw, tol=0.01)
     assert list(rolls["session"]) == [date(2024, 3, 14)]
-    assert rolls.iloc[0]["gap_points"] == pytest.approx(12.5)
+    assert rolls.iloc[0]["gap_points"] == pytest.approx(-12.5)  # badj-raw stepped +12.5: new contract 12.5 lower
     assert bool(rolls.iloc[0]["in_expected_window"]) is True
 
 
@@ -125,3 +126,23 @@ def test_empty_export_rejected_and_nan_bars_detected():
     df = parse_tradingview_csv(f"time,open,high,low,close\n{_unix(2024, 3, 5)},1,2,0.5,\n", timeframe="1D")
     assert nan_bars(df) == [date(2024, 3, 5)]
     assert ohlc_violations(df) == []  # why the explicit NaN check is needed
+
+
+
+def test_ratio_adjust_returns_equal_true_contract_moves_across_a_roll():
+    from fgbt.data.prices import ratio_adjust
+    idx = [d.date() for d in pd.bdate_range("2024-03-11", periods=5)]
+    # old contract days 0-2; roll on day 3 into a contract trading G=50 higher (contango): new was 4090 on day 2
+    raw_close = [4000.0, 4020.0, 4040.0, 4130.9, 4150.0]
+    raw = pd.DataFrame({k: raw_close for k in ("open", "high", "low", "close")}, index=idx)
+    badj = raw.copy()
+    badj.iloc[:3] = raw.iloc[:3] + 50.0  # Panama back-adjustment raises history onto the new contract level
+    ra = ratio_adjust(badj, raw)
+    r = np.log(ra["close"]).diff().to_numpy()
+    assert bool(ra["roll"].iloc[3]) and ra["roll"].sum() == 1
+    assert ra["close"].iloc[-1] == pytest.approx(4150.0)  # latest prices unchanged
+    assert r[3] == pytest.approx(np.log(4130.9 / 4090.0))  # the new contract's own move, no roll jump
+    assert r[1] == pytest.approx(np.log(4020 / 4000))  # pre-roll returns are the old contract's true moves
+    assert r[4] == pytest.approx(np.log(4150.0 / 4130.9))
+    # and the roll detector reports the gap as new - old = +50
+    assert detect_rolls(badj["close"], raw["close"]).iloc[0]["gap_points"] == pytest.approx(50.0)
