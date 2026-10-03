@@ -1,0 +1,8 @@
+{
+  "source": "https://github.com/whit3rabbit/fear-greed-data",
+  "commit": "6143a3bcea70c0dc156b2db24bae16cd78460f7a",
+  "files": {
+    "datasets/archive/fear-greed-pre-2021.csv": "04e93d3ed859d51588470330c1e5b3bfdcd2ef31775646b755fa4e6c6c6fdc89",
+    "json/cnn_output.json": "edfb8a5f7a598586349e1f4a2f355d8fdeab7127d0288249b141683e52882773"
+  }
+}
