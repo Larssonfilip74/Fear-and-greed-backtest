@@ -47,6 +47,19 @@ Notes:
 - Also note whether "Use settlement as close on daily interval" is ticked (Chart settings → Symbol).
 - On Essential/Plus (~10k bars): 1D/1W cover all history, 4H RTH covers all history (~500 bars/yr), and 1H RTH covers ~5.7 years.
 
+
+### 2a. Exporting with the Claude in Chrome extension
+The extension acts in your own logged-in browser, but it is driven from its side panel (or a Claude Code session on your
+computer), not from the cloud research session. Open tradingview.com in Chrome, open the extension panel and paste:
+
+> On TradingView, open a chart of CME_MINI:ES1! on the 1D timeframe. Remove all indicators. In Chart settings → Symbol, set the
+> session to the electronic/extended (full) session and turn back-adjustment (B-ADJ) ON. Scroll the chart left until no older
+> bars load. Then use the layout menu → "Export chart data…", choose UNIX timestamp, and save the file as ES1_ETH_1D_badj.csv.
+> Repeat with back-adjustment (B-ADJ) OFF and save as ES1_ETH_1D_raw.csv. Tell me the first and last date in each file, and
+> whether "settlement as close" was enabled.
+
+Then upload both files on GitHub: branch `claude/busy-hopper-oyn5u2` → `data/raw/tradingview/` → Add file → Upload files.
+
 ## 3. Raw-data integrity
 Every raw file is listed in `data/raw/*/MANIFEST.json` with its source, export date, settings and SHA-256.
 Raw files are never edited. All cleaning happens in code, producing `data/processed/`.
